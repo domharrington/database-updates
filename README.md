@@ -18,7 +18,7 @@ npm install database-updates --save
 ## Usage
 
 ```js
-var DatabaseUpdates = require('./')
+var DatabaseUpdates = require('database-updates')
   , MongoClient = require('mongodb').MongoClient
 
 MongoClient.connect('mongodb://localhost:27017/database-updates', function (err, db) {
