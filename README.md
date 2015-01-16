@@ -61,6 +61,9 @@ module.exports = function (db, done) {
 }
 ```
 
+When an update script is run once, it will never be run again on the same machine.
+The files that have been applied are stored in the (configurable) `databaseUpdates` collection.
+
 ## Naming
 The naming of update scripts is significant for the order in which they are run. The first part of the filename must be a valid semver version e.g. `0.0.1-adding-first-admin-user.js`. The second part (after the '-') is a description of the update.
 
