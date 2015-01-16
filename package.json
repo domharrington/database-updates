@@ -1,0 +1,36 @@
+{
+  "name": "database-updates",
+  "description": "Apply database updates to your application based on semver file names",
+  "version": "0.0.0",
+  "dependencies": {
+    "async": "^0.9.0",
+    "semver": "^4.2.0"
+  },
+  "scripts": {
+    "lint": "./node_modules/.bin/jshint .",
+    "checkStyle": "./node_modules/.bin/jscs .",
+    "pretest": "npm run-script lint && npm run-script checkStyle",
+    "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
+    "posttest": "./node_modules/.bin/istanbul check-coverage --statements 85 --branches 70 --functions 100 --lines 90 && rm -rf coverage",
+    "prepublish": "npm test && npm prune"
+  },
+  "publishConfig": {
+    "registry": "http://registry.npmjs.org"
+  },
+  "author": "Dom Harrington <dom@harrington-mail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "does-index-exist": "0.0.0",
+    "hat": "0.0.3",
+    "istanbul": "^0.2.7",
+    "jscs": "^1.4.5",
+    "jshint": "^2.5.0",
+    "mc-logger": "0.0.0",
+    "mocha": "^1.18.2",
+    "mongodb": "^1.4.28"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:domharrington/database-updates.git"
+  }
+}
