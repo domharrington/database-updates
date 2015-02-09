@@ -2,7 +2,8 @@
 
 Apply database updates to your application based on [semver](http://semver.org/) file names
 
-[![build status](https://secure.travis-ci.org/domharrington/database-updates.png)](http://travis-ci.org/domharrington/database-updates)
+[![build status](https://secure.travis-ci.org/domharrington/database-updates.svg)](http://travis-ci.org/domharrington/database-updates)
+[![dependency status](https://david-dm.org/domharrington/database-updates.svg)](https://david-dm.org/domharrington/database-updates)
 
 The purpose of this module is to ensure that all developers of an application have an up-to-date database. Arbitrary database update scripts or index creation scripts for new properties get created a lot, but all too often these scripts forget to be run which can result in an inconsistent state across developers and even environments.
 
