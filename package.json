@@ -3,15 +3,13 @@
   "description": "Apply database updates to your application based on semver file names",
   "version": "1.1.0",
   "dependencies": {
-    "async": "^0.9.0",
-    "semver": "^4.3.3"
+    "async": "^2.1.2",
+    "semver": "^5.3.0"
   },
   "scripts": {
-    "lint": "./node_modules/.bin/jshint .",
-    "checkStyle": "./node_modules/.bin/jscs .",
-    "pretest": "npm run-script lint && npm run-script checkStyle",
+    "pretest": "eslint . -f unix",
     "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
-    "posttest": "./node_modules/.bin/istanbul check-coverage --statements 85 --branches 70 --functions 100 --lines 90 && rm -rf coverage",
+    "posttest": "./node_modules/.bin/istanbul check-coverage --statements 85 --branches 70 --functions 100 --lines 90",
     "prepublish": "npm test && npm prune"
   },
   "publishConfig": {
@@ -21,13 +19,14 @@
   "license": "ISC",
   "devDependencies": {
     "does-index-exist": "0.0.0",
+    "eslint": "^3.10.2",
+    "eslint-config-airbnb-base": "^10.0.1",
+    "eslint-plugin-import": "^2.2.0",
     "hat": "0.0.3",
-    "istanbul": "^0.2.7",
-    "jscs": "^1.4.5",
-    "jshint": "^2.5.0",
+    "istanbul": "^0.4.5",
     "mc-logger": "0.0.0",
-    "mocha": "^1.18.2",
-    "mongodb": "^1.4.28"
+    "mocha": "^3.1.2",
+    "mongodb": "^2.2.11"
   },
   "repository": {
     "type": "git",
