@@ -9,7 +9,7 @@
   "scripts": {
     "pretest": "eslint . -f unix",
     "test": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
-    "posttest": "./node_modules/.bin/istanbul check-coverage --statements 85 --branches 70 --functions 100 --lines 90",
+    "posttest": "./node_modules/.bin/istanbul check-coverage --statements 85 --branches 70 --functions 100 --lines 90 && rm -rf coverage",
     "prepublish": "npm test && npm prune"
   },
   "publishConfig": {
