@@ -15,17 +15,33 @@ npm install database-updates --save
 ## Usage
 
 ```js
+const { MongoClient } = require('mongodb')
 const DatabaseUpdates = require('database-updates')
-const MongoClient = require('mongodb').MongoClient
 
-MongoClient.connect('mongodb://localhost:27017/database-updates', (err, db) => {
+async function main() {
+  const client = await MongoClient.connect(
+    'mongodb://localhost/database-updates'
+  )
+
+  await client.db().dropDatabase()
+
   const updates = new DatabaseUpdates({
-    db,
+    db: client.db(),
     updatePath: `${__dirname}/test/fixtures/`,
   })
 
-  updates.on('end', () => db.close())
+  updates.on('file', (file) => console.log(`Processing file: ${file}`))
+  updates.on('end', () => {
+    console.log('Done!')
+    return client.close()
+  })
+}
+
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
 })
+
 ```
 
 ### `var updates = new DatabaseUpdates(options)`
