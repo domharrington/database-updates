@@ -52,21 +52,19 @@ describe('database-updates', () => {
     })
   })
 
-  it.only('should process files in semver order', function test(done) {
+  it('should process files in semver order', function test(done) {
     const updates = new DatabaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
-      logger: console,
+      logger,
     })
     const processedFiles = []
 
     updates.on('file', (file) => {
-      console.log({ file })
       processedFiles.push(file)
     })
 
     updates.on('end', () => {
-      console.log('end')
       assert.deepEqual(processedFiles, files)
       done()
     })
@@ -105,31 +103,26 @@ describe('database-updates', () => {
       logger,
     })
 
-    function assertUpdate(update, next) {
-      const indexExist = doesIndexExist({
-        connection: client.db(),
-        collection: update.collection,
-      })
+    async function assertUpdate(update, next) {
+      const exists = await client
+        .db()
+        .collection(update.collection)
+        .indexExists(update.index)
 
-      indexExist(update.index, (err, exists) => {
-        if (err) return next(err)
-        assert(
-          exists,
-          `Index should exist for update: ${JSON.stringify(update)}`
-        )
-        return next()
-      })
+      assert(exists, `Index should exist for update: ${JSON.stringify(update)}`)
     }
 
-    updates.on('end', () => {
+    updates.on('end', async () => {
       const expectedUpdates = [
-        { collection: 'a', index: { key: { a: 1 } } },
-        { collection: 'b', index: { key: { b: 1 } } },
-        { collection: 'c', index: { key: { c: 1 } } },
-        { collection: 'd', index: { key: { d: 1 } } },
+        { collection: 'a', index: 'a_1' },
+        { collection: 'b', index: 'b_1' },
+        { collection: 'c', index: 'c_1' },
+        { collection: 'd', index: 'd_1' },
       ]
 
-      async.each(expectedUpdates, assertUpdate.bind(this), done)
+      await Promise.all(expectedUpdates.map((update) => assertUpdate(update)))
+        .then(() => done())
+        .catch((err) => done(err))
     })
   })
 
@@ -141,21 +134,20 @@ describe('database-updates', () => {
     })
     const collection = client.db().collection('databaseUpdates')
 
-    function assertUpdateStored(file, next) {
-      collection.findOne({ file }, (err, storedUpdate) => {
-        if (err) return next(err)
-        // console.log(storedUpdate);
-        assert(storedUpdate.created, 'Should store a created date')
-        return next()
-      })
+    async function assertUpdateStored(file, next) {
+      const storedUpdate = await collection.findOne({ file })
+      assert(storedUpdate.created, 'Should store a created date')
     }
 
-    updates.on('end', () => {
-      collection.count((err, count) => {
-        if (err) return done(err)
-        assert.equal(count, 4)
-        return async.each(files, assertUpdateStored.bind(this), done)
-      })
+    updates.on('end', async () => {
+      try {
+        assert.equal(await collection.countDocuments(), 4)
+        await Promise.all(files.map((update) => assertUpdateStored(update)))
+          .then(() => done())
+          .catch((err) => done(err))
+      } catch (e) {
+        return done(e)
+      }
     })
   })
 
@@ -163,8 +155,7 @@ describe('database-updates', () => {
     const collection = client.db().collection('databaseUpdates')
     let count = 0
 
-    collection.insert({ file: files[0], created: new Date() }, (err) => {
-      if (err) return done(err)
+    collection.insertOne({ file: files[0], created: new Date() }).then(() => {
       const updates = new DatabaseUpdates({
         updatePath: `${__dirname}/fixtures`,
         db: client.db(),

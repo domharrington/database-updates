@@ -1,3 +1,3 @@
 module.exports = (db, cb) => {
-  db.collection('d').ensureIndex({ d: 1 }, cb)
+  return db.collection('d').createIndex({ d: 1 })
 }

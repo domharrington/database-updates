@@ -42,55 +42,51 @@ DatabaseUpdates.prototype.getFiles = function getFiles() {
   }
 }
 
-DatabaseUpdates.prototype.updateExists = function updateExists(file, cb) {
-  this.updateCollection.count({ file }, (err, count) => {
-    if (err) return cb(err)
-    return cb(null, count !== 0)
-  })
+DatabaseUpdates.prototype.updateExists = function updateExists(file) {
+  return this.updateCollection.count({ file }).then((count) => count !== 0)
 }
 
-DatabaseUpdates.prototype.runFile = function runFile(file, next) {
-  this.updateExists(file, (err, exists) => {
-    if (err) return next(err)
-    if (exists) return next()
+DatabaseUpdates.prototype.runFile = async function runFile(file) {
+  const exists = await this.updateExists(file)
+  if (exists) return
 
-    this.emit('file', file)
-    this.logger.info('Running update:', file)
+  this.emit('file', file)
+  this.logger.info('Running update:', file)
 
-    /* eslint-disable global-require, import/no-dynamic-require */
-    const update = require(path.join(this.updatePath, file))
-    /* eslint-enable global-require, import/no-dynamic-require */
+  /* eslint-disable global-require, import/no-dynamic-require */
+  const update = require(path.join(this.updatePath, file))
+  /* eslint-enable global-require, import/no-dynamic-require */
 
-    return update(this.db, (err) => {
-      if (err) {
-        this.logger.error('Error running update:', file)
-        return next(err)
-      }
-
-      return this.persistUpdate(file, next)
+  return update(this.db)
+    .then(() => {
+      return this.persistUpdate(file)
     })
-  })
+    .catch((err) => {
+      this.logger.error('Error running update:', file)
+      throw err
+    })
 }
 
-DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file, next) {
+DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file) {
   this.logger.info('Persisting update:', file)
 
   const update = { file, created: new Date() }
-  this.updateCollection.insert(update, (err) => {
-    if (err) {
-      this.logger.error('Error persisting update:', update)
-      return next(err)
-    }
-
-    return next()
+  return this.updateCollection.insertOne(update).catch((err) => {
+    this.logger.error('Error persisting update:', update)
+    throw err
   })
 }
 
-DatabaseUpdates.prototype.run = function run() {
-  async.eachSeries(this.updateFiles, this.runFile.bind(this), (err) => {
-    if (err) return this.logger.error('Error running updates:', err)
+DatabaseUpdates.prototype.run = async function run() {
+  try {
+    for (const file of this.updateFiles) {
+      await this.runFile(file)
+    }
     return this.emit('end')
-  })
+  } catch (err) {
+    this.logger.error('Error running updates:', err)
+    throw err
+  }
 }
 
 module.exports = DatabaseUpdates
