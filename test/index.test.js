@@ -19,7 +19,10 @@ describe('database-updates', () => {
     )
   })
 
+  // Drop the database
   afterEach(() => client.db().dropDatabase())
+  // Close the mongo connection so mocha can exit
+  afterEach(() => client.close())
 
   describe('updatesPath', () => {
     it('should default to ./updates', () => {
