@@ -1,4 +1,4 @@
-const EventEmitter = require('events').EventEmitter
+const { EventEmitter } = require('events')
 const fs = require('fs')
 const semver = require('semver')
 const async = require('async')
@@ -29,11 +29,12 @@ DatabaseUpdates.prototype = Object.create(EventEmitter.prototype)
 
 DatabaseUpdates.prototype.getFiles = function getFiles() {
   try {
-    this.updateFiles = fs.readdirSync(this.updatePath)
+    this.updateFiles = fs
+      .readdirSync(this.updatePath)
       // exclude non-javascript files in the updates folder
-      .map(i => (path.extname(i) !== '.js' ? false : i))
+      .map((i) => (path.extname(i) !== '.js' ? false : i))
       // exclude falsy values and filenames that without a valid semver
-      .filter(i => i && semver.valid(i.split('-')[0]))
+      .filter((i) => i && semver.valid(i.split('-')[0]))
       // exclude anything after a hyphen from the version number
       .sort((a, b) => semver.compare(a.split('-')[0], b.split('-')[0]))
   } catch (e) {

@@ -4,7 +4,11 @@
   "rules": {
     "semi": ["error", "never"],
     "no-shadow": ["error", { "allow": ["err"] }],
-    "import/no-extraneous-dependencies": ["error", { "devDependencies": ["**/*.test.js", "example.js"] }]
+    "import/no-extraneous-dependencies": [
+      "error",
+      { "devDependencies": ["**/*.test.js", "example.js"] }
+    ],
+    "comma-dangle": "off"
   },
 
   "env": {
