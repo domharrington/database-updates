@@ -2,8 +2,6 @@ const assert = require('assert')
 const logger = require('mc-logger')
 const { MongoClient } = require('mongodb')
 const hat = require('hat')
-const async = require('async')
-const doesIndexExist = require('does-index-exist')
 const DatabaseUpdates = require('../index')
 
 const files = [
@@ -21,17 +19,15 @@ describe('database-updates', () => {
     )
   })
 
-  afterEach(() => {
-    return client.db().dropDatabase()
-  })
+  afterEach(() => client.db().dropDatabase())
 
   describe('updatesPath', () => {
-    it('should default to ./updates', function test() {
+    it('should default to ./updates', () => {
       const updates = new DatabaseUpdates({ logger, db: client.db() })
       assert.equal(updates.updatePath, `${process.cwd()}/updates`)
     })
 
-    it('should be configurable', function test() {
+    it('should be configurable', () => {
       const updatePath = './support/database/updates'
       const updates = new DatabaseUpdates({
         updatePath,
@@ -52,7 +48,7 @@ describe('database-updates', () => {
     })
   })
 
-  it('should process files in semver order', function test(done) {
+  it('should process files in semver order', (done) => {
     const updates = new DatabaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
@@ -96,14 +92,14 @@ describe('database-updates', () => {
     testIgnoreFile('invalid-update.js', 'Should only work with semver files')
   )
 
-  it('should execute the files', function test(done) {
+  it('should execute the files', (done) => {
     const updates = new DatabaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
       logger,
     })
 
-    async function assertUpdate(update, next) {
+    async function assertUpdate(update) {
       const exists = await client
         .db()
         .collection(update.collection)
@@ -126,7 +122,7 @@ describe('database-updates', () => {
     })
   })
 
-  it('should persist the updates in the database', function test(done) {
+  it('should persist the updates in the database', (done) => {
     const updates = new DatabaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
@@ -134,7 +130,7 @@ describe('database-updates', () => {
     })
     const collection = client.db().collection('databaseUpdates')
 
-    async function assertUpdateStored(file, next) {
+    async function assertUpdateStored(file) {
       const storedUpdate = await collection.findOne({ file })
       assert(storedUpdate.created, 'Should store a created date')
     }
@@ -142,7 +138,9 @@ describe('database-updates', () => {
     updates.on('end', async () => {
       try {
         assert.equal(await collection.countDocuments(), 4)
-        await Promise.all(files.map((update) => assertUpdateStored(update)))
+        return await Promise.all(
+          files.map((update) => assertUpdateStored(update))
+        )
           .then(() => done())
           .catch((err) => done(err))
       } catch (e) {
@@ -151,7 +149,7 @@ describe('database-updates', () => {
     })
   })
 
-  it('should not run the same file if it has already been run', function test(done) {
+  it('should not run the same file if it has already been run', (done) => {
     const collection = client.db().collection('databaseUpdates')
     let count = 0
 

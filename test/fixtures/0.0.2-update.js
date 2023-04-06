@@ -1,3 +1,1 @@
-module.exports = (db) => {
-  return db.collection('b').createIndex({ b: 1 })
-}
+module.exports = (db) => db.collection('b').createIndex({ b: 1 })

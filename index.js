@@ -1,7 +1,6 @@
 const { EventEmitter } = require('events')
 const fs = require('fs')
 const semver = require('semver')
-const async = require('async')
 const path = require('path')
 
 function DatabaseUpdates(options) {
@@ -48,7 +47,7 @@ DatabaseUpdates.prototype.updateExists = function updateExists(file) {
 
 DatabaseUpdates.prototype.runFile = async function runFile(file) {
   const exists = await this.updateExists(file)
-  if (exists) return
+  if (exists) return Promise.resolve()
 
   this.emit('file', file)
   this.logger.info('Running update:', file)
@@ -58,9 +57,7 @@ DatabaseUpdates.prototype.runFile = async function runFile(file) {
   /* eslint-enable global-require, import/no-dynamic-require */
 
   return update(this.db)
-    .then(() => {
-      return this.persistUpdate(file)
-    })
+    .then(() => this.persistUpdate(file))
     .catch((err) => {
       this.logger.error('Error running update:', file)
       throw err
@@ -79,7 +76,9 @@ DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file) {
 
 DatabaseUpdates.prototype.run = async function run() {
   try {
+    // eslint-disable-next-line no-restricted-syntax
     for (const file of this.updateFiles) {
+      // eslint-disable-next-line no-await-in-loop
       await this.runFile(file)
     }
     return this.emit('end')
