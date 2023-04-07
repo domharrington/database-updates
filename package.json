@@ -8,8 +8,7 @@
   "scripts": {
     "pretest": "eslint . -f unix",
     "test": "nyc mocha test --exit",
-    "posttest": "nyc check-coverage --statements 85 --branches 70 --functions 85 --lines 85 && rm -rf .nyc_output",
-    "prepublish": "npm test && npm prune"
+    "posttest": "nyc check-coverage --statements 85 --branches 70 --functions 85 --lines 85 && rm -rf .nyc_output"
   },
   "publishConfig": {
     "registry": "http://registry.npmjs.org"
