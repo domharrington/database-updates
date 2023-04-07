@@ -84,6 +84,7 @@ DatabaseUpdates.prototype.run = async function run() {
     return this.emit('end')
   } catch (err) {
     this.logger.error('Error running updates:', err)
+    this.emit('error', err)
     throw err
   }
 }

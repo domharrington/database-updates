@@ -177,4 +177,21 @@ describe('database-updates', () => {
       })
     })
   })
+
+  it('should bubble up errors', (done) => {
+    const updates = new DatabaseUpdates({
+      updatePath: `${__dirname}/error-fixtures`,
+      db: client.db(),
+      logger,
+    })
+
+    updates.on('error', (err) => {
+      try {
+        assert.equal(err.message, 'This is an error')
+        return done()
+      } catch (e) {
+        return done(e)
+      }
+    })
+  })
 })
