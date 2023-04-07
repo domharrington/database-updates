@@ -1,12 +1,10 @@
-const { EventEmitter } = require('events')
 const fs = require('fs')
 const semver = require('semver')
 const path = require('path')
 
 function DatabaseUpdates(options) {
-  EventEmitter.apply(this)
-
   options = options || {} // eslint-disable-line no-param-reassign
+  if (!(this instanceof DatabaseUpdates)) return new DatabaseUpdates(options)
 
   this.db = options.db
   if (!this.db) throw new Error('`options.db` must be provided')
@@ -18,13 +16,10 @@ function DatabaseUpdates(options) {
 
   this.updateFiles = []
 
-  process.nextTick(() => {
-    this.getFiles()
-    this.run()
-  })
+  this.getFiles()
 }
 
-DatabaseUpdates.prototype = Object.create(EventEmitter.prototype)
+DatabaseUpdates.prototype = Object.create({})
 
 DatabaseUpdates.prototype.getFiles = function getFiles() {
   try {
@@ -47,9 +42,8 @@ DatabaseUpdates.prototype.updateExists = function updateExists(file) {
 
 DatabaseUpdates.prototype.runFile = async function runFile(file) {
   const exists = await this.updateExists(file)
-  if (exists) return Promise.resolve()
+  if (exists) return Promise.resolve(false)
 
-  this.emit('file', file)
   this.logger.info('Running update:', file)
 
   /* eslint-disable global-require, import/no-dynamic-require */
@@ -75,16 +69,18 @@ DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file) {
 }
 
 DatabaseUpdates.prototype.run = async function run() {
+  const updates = []
   try {
     // eslint-disable-next-line no-restricted-syntax
     for (const file of this.updateFiles) {
       // eslint-disable-next-line no-await-in-loop
-      await this.runFile(file)
+      if ((await this.runFile(file)) !== false) {
+        updates.push(file)
+      }
     }
-    return this.emit('end')
+    return updates
   } catch (err) {
     this.logger.error('Error running updates:', err)
-    this.emit('error', err)
     throw err
   }
 }
