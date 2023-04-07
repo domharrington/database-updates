@@ -48,7 +48,7 @@ main().catch((e) => {
 
 Options must include:
 
-- `db` - a database connection returned from `MongoClient.connect` or similar
+- `db` - a database connection returned from `MongoClient.connect().db()` or similar
 
 Optional options:
 
@@ -61,18 +61,18 @@ Optional options:
 An update script is a JavaScript file with the following signature:
 
 ```js
-module.exports = function (db, done) {}
+module.exports = function (db) {}
 ```
 
-The `db` parameter is your application's database object. This enables you to modify the database.
+This can be an async function, or return a Promise.
 
-The `done` parameter is a callback to call when complete.
+The `db` parameter is your application's database object. This enables you to modify the database.
 
 An example update script to add an index to a collection would be:
 
 ```js
-module.exports = function (db, done) {
-  db.collection('collection').ensureIndex({ a: 1 }, done)
+module.exports = (db) => {
+  return db.collection('a').createIndex({ a: 1 });
 }
 ```
 
