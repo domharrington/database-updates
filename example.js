@@ -1,8 +1,26 @@
-const DatabaseUpdates = require('./')
-const MongoClient = require('mongodb').MongoClient
+const { MongoClient } = require('mongodb')
+const DatabaseUpdates = require('.')
 
-MongoClient.connect('mongodb://localhost:27017/database-updates', (err, db) => {
-  const updates = new DatabaseUpdates({ db, updatePath: `${__dirname}/test/fixtures/` })
+async function main() {
+  const client = await MongoClient.connect(
+    'mongodb://localhost/database-updates'
+  )
 
-  updates.on('end', () => db.close())
+  await client.db().dropDatabase()
+
+  const updates = new DatabaseUpdates({
+    db: client.db(),
+    updatePath: `${__dirname}/test/fixtures/`,
+  })
+
+  updates.on('file', (file) => console.log(`Processing file: ${file}`))
+  updates.on('end', () => {
+    console.log('Done!')
+    return client.close()
+  })
+}
+
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
 })

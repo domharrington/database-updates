@@ -1,7 +1,6 @@
-const EventEmitter = require('events').EventEmitter
+const { EventEmitter } = require('events')
 const fs = require('fs')
 const semver = require('semver')
-const async = require('async')
 const path = require('path')
 
 function DatabaseUpdates(options) {
@@ -29,11 +28,12 @@ DatabaseUpdates.prototype = Object.create(EventEmitter.prototype)
 
 DatabaseUpdates.prototype.getFiles = function getFiles() {
   try {
-    this.updateFiles = fs.readdirSync(this.updatePath)
+    this.updateFiles = fs
+      .readdirSync(this.updatePath)
       // exclude non-javascript files in the updates folder
-      .map(i => (path.extname(i) !== '.js' ? false : i))
-      // exclude falsy values and filenames that without a valid semver
-      .filter(i => i && semver.valid(i.split('-')[0]))
+      .map((i) => (path.extname(i) !== '.js' ? false : i))
+      // exclude falsy values and filenames without a valid semver
+      .filter((i) => i && semver.valid(i.split('-')[0]))
       // exclude anything after a hyphen from the version number
       .sort((a, b) => semver.compare(a.split('-')[0], b.split('-')[0]))
   } catch (e) {
@@ -41,55 +41,51 @@ DatabaseUpdates.prototype.getFiles = function getFiles() {
   }
 }
 
-DatabaseUpdates.prototype.updateExists = function updateExists(file, cb) {
-  this.updateCollection.count({ file }, (err, count) => {
-    if (err) return cb(err)
-    return cb(null, count !== 0)
-  })
+DatabaseUpdates.prototype.updateExists = function updateExists(file) {
+  return this.updateCollection.count({ file }).then((count) => count !== 0)
 }
 
-DatabaseUpdates.prototype.runFile = function runFile(file, next) {
-  this.updateExists(file, (err, exists) => {
-    if (err) return next(err)
-    if (exists) return next()
+DatabaseUpdates.prototype.runFile = async function runFile(file) {
+  const exists = await this.updateExists(file)
+  if (exists) return Promise.resolve()
 
-    this.emit('file', file)
-    this.logger.info('Running update:', file)
+  this.emit('file', file)
+  this.logger.info('Running update:', file)
 
-    /* eslint-disable global-require, import/no-dynamic-require */
-    const update = require(path.join(this.updatePath, file))
-    /* eslint-enable global-require, import/no-dynamic-require */
+  /* eslint-disable global-require, import/no-dynamic-require */
+  const update = require(path.join(this.updatePath, file))
+  /* eslint-enable global-require, import/no-dynamic-require */
 
-    return update(this.db, (err) => {
-      if (err) {
-        this.logger.error('Error running update:', file)
-        return next(err)
-      }
-
-      return this.persistUpdate(file, next)
+  return update(this.db)
+    .then(() => this.persistUpdate(file))
+    .catch((err) => {
+      this.logger.error('Error running update:', file)
+      throw err
     })
-  })
 }
 
-DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file, next) {
+DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file) {
   this.logger.info('Persisting update:', file)
 
   const update = { file, created: new Date() }
-  this.updateCollection.insert(update, (err) => {
-    if (err) {
-      this.logger.error('Error persisting update:', update)
-      return next(err)
-    }
-
-    return next()
+  return this.updateCollection.insertOne(update).catch((err) => {
+    this.logger.error('Error persisting update:', update)
+    throw err
   })
 }
 
-DatabaseUpdates.prototype.run = function run() {
-  async.eachSeries(this.updateFiles, this.runFile.bind(this), (err) => {
-    if (err) return this.logger.error('Error running updates:', err)
+DatabaseUpdates.prototype.run = async function run() {
+  try {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const file of this.updateFiles) {
+      // eslint-disable-next-line no-await-in-loop
+      await this.runFile(file)
+    }
     return this.emit('end')
-  })
+  } catch (err) {
+    this.logger.error('Error running updates:', err)
+    throw err
+  }
 }
 
 module.exports = DatabaseUpdates
