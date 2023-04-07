@@ -1,7 +1,7 @@
 {
   "name": "database-updates",
   "description": "Apply database updates to your application based on semver file names",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "dependencies": {
     "semver": "^7.3.8"
   },
