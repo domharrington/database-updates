@@ -64,8 +64,12 @@ describe('database-updates', () => {
     })
 
     updates.on('end', () => {
-      assert.deepEqual(processedFiles, files)
-      done()
+      try {
+        assert.deepEqual(processedFiles, files)
+        return done()
+      } catch (e) {
+        return done(e)
+      }
     })
   })
 
