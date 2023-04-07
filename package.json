@@ -11,7 +11,7 @@
     "posttest": "nyc check-coverage --statements 85 --branches 70 --functions 85 --lines 85 && rm -rf .nyc_output"
   },
   "publishConfig": {
-    "registry": "http://registry.npmjs.org"
+    "registry": "https://registry.npmjs.org"
   },
   "author": "Dom Harrington <dom@harrington-mail.com>",
   "license": "ISC",
