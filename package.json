@@ -28,6 +28,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:domharrington/database-updates.git"
+    "url": "git+ssh://git@github.com/domharrington/database-updates.git"
   }
 }
