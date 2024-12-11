@@ -61,6 +61,9 @@ Returns:
 An update script is a JavaScript file with the following signature:
 
 ```js
+// ESM
+export default function (db) {}
+// CJS
 module.exports = function (db) {}
 ```
 
@@ -71,6 +74,11 @@ The `db` parameter is your application's database object. This enables you to mo
 An example update script to add an index to a collection would be:
 
 ```js
+// ESM
+export default (db) => {
+  return db.collection('a').createIndex({ a: 1 })
+}
+// CJS
 module.exports = (db) => {
   return db.collection('a').createIndex({ a: 1 })
 }
@@ -86,8 +94,8 @@ The naming of update scripts is significant for the order in which they are run.
 A folder with the following update scripts:
 
 ```
-1.0.0-update.js
-1.0.2-update.js
+1.0.0-update.mjs
+1.0.2-update.mjs
 0.0.1-update.js
 0.0.2-update.js
 ```
@@ -98,9 +106,9 @@ Would get run in this order:
 
 `0.0.2-update.js`
 
-`1.0.0-update.js`
+`1.0.0-update.mjs`
 
-`1.0.2-update.js`
+`1.0.2-update.mjs`
 
 ## Credits
 
