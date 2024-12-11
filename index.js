@@ -48,12 +48,13 @@ DatabaseUpdates.prototype.runFile = async function runFile(file) {
 
   const update = await import(path.join(this.updatePath, file))
 
-  return update.default(this.db)
-    .then(() => this.persistUpdate(file))
-    .catch((err) => {
-      this.logger.error('Error running update:', file)
-      throw err
-    })
+  try {
+    await update.default(this.db)
+    return this.persistUpdate(file)
+  } catch (err) {
+    this.logger.error('Error running update:', file)
+    throw err
+  }
 }
 
 DatabaseUpdates.prototype.persistUpdate = function persistUpdate(file) {
