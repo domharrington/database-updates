@@ -155,4 +155,29 @@ describe('database-updates', () => {
       }
     )
   })
+
+  /*
+   * This test is a bit of a hack. Without this module being rewritten in TS
+   * It's impossible for me to actually test that it works e2e with TS files
+   * So basically what I'm doing here is pointing the module at a folder
+   * that contains a TS file, and then asserting that it throws an error
+   * because it cannot load the file. This proves that we're attempting
+   * to open it, but it's dependent on where the module is running whether
+   * it will actually work or not.
+   */
+  it('should look for ts files', async () => {
+    await assert.rejects(
+      async () => {
+        await databaseUpdates({
+          updatePath: `${__dirname}/ts-fixtures`,
+          db: client.db(),
+          logger,
+        }).run()
+      },
+      {
+        name: 'TypeError',
+        message: 'Unknown file extension ".ts" for /Users/domh/Sites/personal/database-updates/test/ts-fixtures/0.0.1-update.ts',
+      }
+    )
+  })
 })

@@ -25,8 +25,8 @@ DatabaseUpdates.prototype.getFiles = function getFiles() {
   try {
     this.updateFiles = fs
       .readdirSync(this.updatePath)
-      // exclude non-javascript files in the updates folder
-      .map((i) => (path.extname(i).match(/\.js|\.mjs/) ? i : false))
+      // accepts only files with a .js, .mjs or .ts extension
+      .map((i) => (path.extname(i).match(/\.js|\.mjs|\.ts/) ? i : false))
       // exclude falsy values and filenames without a valid semver
       .filter((i) => i && semver.valid(i.split('-')[0]))
       // exclude anything after a hyphen from the version number
@@ -49,7 +49,18 @@ DatabaseUpdates.prototype.runFile = async function runFile(file) {
   const update = await import(path.join(this.updatePath, file))
 
   try {
-    await update.default(this.db)
+    /**
+     * When importing a .js or .mjs file, the default export
+     * is wrapped in a `default` object
+     * When importing a .ts file, the default export seems
+     * to be wrapped in a `default.default` object
+     *
+     * I don't know if this is just a problem with our TS config
+     * but I think this definitely warrants some
+     * further investigation if it causes problems.
+     */
+    const defaultExport = update.default.default || update.default
+    await defaultExport(this.db)
     return this.persistUpdate(file)
   } catch (err) {
     this.logger.error('Error running update:', file)

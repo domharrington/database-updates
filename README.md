@@ -6,6 +6,9 @@ The purpose of this module is to ensure that all developers of an application ha
 
 Adding this module to your application will ensure that any scripts that need to be run will by executed across all machines during setup.
 
+> [!WARNING]
+> TypeScript support is considered experimental. This module is written in JS but accepts update files that have a `.ts` file extension. It is dependent on your runtime being able to dynamically import() .ts files for it to work. Let me know if you have any problems with it and I can spend more time on it.
+
 ## Installation
 
 ```sh
@@ -96,6 +99,7 @@ A folder with the following update scripts:
 ```
 1.0.0-update.mjs
 1.0.2-update.mjs
+1.0.3-update.ts
 0.0.1-update.js
 0.0.2-update.js
 ```
@@ -109,6 +113,8 @@ Would get run in this order:
 `1.0.0-update.mjs`
 
 `1.0.2-update.mjs`
+
+`1.0.3-update.ts`
 
 ## Credits
 
