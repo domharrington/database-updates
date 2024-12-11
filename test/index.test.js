@@ -1,6 +1,7 @@
 const assert = require('assert')
 const logger = require('mc-logger')
 const { MongoClient } = require('mongodb')
+// @todo remove this?
 const hat = require('hat')
 const databaseUpdates = require('../index')
 
@@ -9,6 +10,7 @@ const files = [
   '0.0.2-update.js',
   '1.0.0-update.js',
   '1.0.2-update.js',
+  '1.0.3-update.mjs',
 ]
 
 describe('database-updates', () => {
@@ -90,17 +92,20 @@ describe('database-updates', () => {
 
       assert(exists, `Index should exist for update: ${JSON.stringify(update)}`)
     }
-    await databaseUpdates({
+    const updates = await databaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
       logger,
     }).run()
+
+    assert.deepEqual(updates, files)
 
     const expectedUpdates = [
       { collection: 'a', index: 'a_1' },
       { collection: 'b', index: 'b_1' },
       { collection: 'c', index: 'c_1' },
       { collection: 'd', index: 'd_1' },
+      { collection: 'e', index: 'e_1' },
     ]
     return Promise.all(expectedUpdates.map((update) => assertUpdate(update)))
   })
@@ -118,7 +123,7 @@ describe('database-updates', () => {
       assert(storedUpdate.created, 'Should store a created date')
     }
 
-    assert.equal(await collection.countDocuments(), 4)
+    assert.equal(await collection.countDocuments(), 5)
     return Promise.all(files.map((update) => assertUpdateStored(update)))
   })
 

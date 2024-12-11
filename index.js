@@ -26,7 +26,7 @@ DatabaseUpdates.prototype.getFiles = function getFiles() {
     this.updateFiles = fs
       .readdirSync(this.updatePath)
       // exclude non-javascript files in the updates folder
-      .map((i) => (path.extname(i) !== '.js' ? false : i))
+      .map((i) => (path.extname(i).match(/\.js|\.mjs/) ? i : false))
       // exclude falsy values and filenames without a valid semver
       .filter((i) => i && semver.valid(i.split('-')[0]))
       // exclude anything after a hyphen from the version number
@@ -46,11 +46,9 @@ DatabaseUpdates.prototype.runFile = async function runFile(file) {
 
   this.logger.info('Running update:', file)
 
-  /* eslint-disable global-require, import/no-dynamic-require */
-  const update = require(path.join(this.updatePath, file))
-  /* eslint-enable global-require, import/no-dynamic-require */
+  const update = await import(path.join(this.updatePath, file))
 
-  return update(this.db)
+  return update.default(this.db)
     .then(() => this.persistUpdate(file))
     .catch((err) => {
       this.logger.error('Error running update:', file)
