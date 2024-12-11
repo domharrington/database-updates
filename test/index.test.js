@@ -176,7 +176,7 @@ describe('database-updates', () => {
       },
       {
         name: 'TypeError',
-        message: 'Unknown file extension ".ts" for /Users/domh/Sites/personal/database-updates/test/ts-fixtures/0.0.1-update.ts',
+        message: /Unknown file extension ".ts"/
       }
     )
   })
