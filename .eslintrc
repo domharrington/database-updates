@@ -1,6 +1,11 @@
 {
   "extends": "airbnb-base",
 
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+
   "rules": {
     "semi": ["error", "never"],
     "no-shadow": ["error", { "allow": ["err"] }],
@@ -12,6 +17,8 @@
   },
 
   "env": {
-    "mocha": true
+    "mocha": true,
+    "es6": true,
+    "node": true
   }
 }

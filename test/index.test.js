@@ -1,14 +1,16 @@
 const assert = require('assert')
 const logger = require('mc-logger')
 const { MongoClient } = require('mongodb')
+// @todo remove this?
 const hat = require('hat')
-const DatabaseUpdates = require('../index')
+const databaseUpdates = require('../index')
 
 const files = [
   '0.0.1-update.js',
   '0.0.2-update.js',
   '1.0.0-update.js',
   '1.0.2-update.js',
+  '1.0.3-update.mjs',
 ]
 
 describe('database-updates', () => {
@@ -26,13 +28,13 @@ describe('database-updates', () => {
 
   describe('updatesPath', () => {
     it('should default to ./updates', () => {
-      const updates = new DatabaseUpdates({ logger, db: client.db() })
+      const updates = databaseUpdates({ logger, db: client.db() })
       assert.equal(updates.updatePath, `${process.cwd()}/updates`)
     })
 
     it('should be configurable', () => {
       const updatePath = './support/database/updates'
-      const updates = new DatabaseUpdates({
+      const updates = databaseUpdates({
         updatePath,
         logger,
         db: client.db(),
@@ -45,47 +47,29 @@ describe('database-updates', () => {
   describe('db', () => {
     it('should throw if no db provided', () => {
       assert.throws(() => {
-        const updates = new DatabaseUpdates({ logger })
-        updates.run()
+        databaseUpdates({ logger })
       }, /`options.db` must be provided/)
     })
   })
 
-  it('should process files in semver order', (done) => {
-    const updates = new DatabaseUpdates({
+  it('should process files in semver order', async () => {
+    const processedFiles = await databaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
       logger,
-    })
-    const processedFiles = []
-
-    updates.on('file', (file) => {
-      processedFiles.push(file)
-    })
-
-    updates.on('end', () => {
-      try {
-        assert.deepEqual(processedFiles, files)
-        return done()
-      } catch (e) {
-        return done(e)
-      }
-    })
+    }).run()
+    assert.deepEqual(processedFiles, files)
   })
 
   function testIgnoreFile(fileName, reason) {
-    return function test(done) {
-      const updates = new DatabaseUpdates({
+    return async function test() {
+      const updates = await databaseUpdates({
         updatePath: `${__dirname}/fixtures`,
         db: client.db(),
         logger,
-      })
+      }).run()
 
-      updates.on('file', (file) => {
-        if (file === fileName) done(new Error(reason))
-      })
-
-      updates.on('end', () => done())
+      assert.equal(updates.includes(fileName), false, reason)
     }
   }
 
@@ -99,13 +83,7 @@ describe('database-updates', () => {
     testIgnoreFile('invalid-update.js', 'Should only work with semver files')
   )
 
-  it('should execute the files', (done) => {
-    const updates = new DatabaseUpdates({
-      updatePath: `${__dirname}/fixtures`,
-      db: client.db(),
-      logger,
-    })
-
+  it('should execute the files', async () => {
     async function assertUpdate(update) {
       const exists = await client
         .db()
@@ -114,27 +92,30 @@ describe('database-updates', () => {
 
       assert(exists, `Index should exist for update: ${JSON.stringify(update)}`)
     }
-
-    updates.on('end', async () => {
-      const expectedUpdates = [
-        { collection: 'a', index: 'a_1' },
-        { collection: 'b', index: 'b_1' },
-        { collection: 'c', index: 'c_1' },
-        { collection: 'd', index: 'd_1' },
-      ]
-
-      await Promise.all(expectedUpdates.map((update) => assertUpdate(update)))
-        .then(() => done())
-        .catch((err) => done(err))
-    })
-  })
-
-  it('should persist the updates in the database', (done) => {
-    const updates = new DatabaseUpdates({
+    const updates = await databaseUpdates({
       updatePath: `${__dirname}/fixtures`,
       db: client.db(),
       logger,
-    })
+    }).run()
+
+    assert.deepEqual(updates, files)
+
+    const expectedUpdates = [
+      { collection: 'a', index: 'a_1' },
+      { collection: 'b', index: 'b_1' },
+      { collection: 'c', index: 'c_1' },
+      { collection: 'd', index: 'd_1' },
+      { collection: 'e', index: 'e_1' },
+    ]
+    return Promise.all(expectedUpdates.map((update) => assertUpdate(update)))
+  })
+
+  it('should persist the updates in the database', async () => {
+    await databaseUpdates({
+      updatePath: `${__dirname}/fixtures`,
+      db: client.db(),
+      logger,
+    }).run()
     const collection = client.db().collection('databaseUpdates')
 
     async function assertUpdateStored(file) {
@@ -142,39 +123,36 @@ describe('database-updates', () => {
       assert(storedUpdate.created, 'Should store a created date')
     }
 
-    updates.on('end', async () => {
-      try {
-        assert.equal(await collection.countDocuments(), 4)
-        return await Promise.all(
-          files.map((update) => assertUpdateStored(update))
-        )
-          .then(() => done())
-          .catch((err) => done(err))
-      } catch (e) {
-        return done(e)
-      }
-    })
+    assert.equal(await collection.countDocuments(), 5)
+    return Promise.all(files.map((update) => assertUpdateStored(update)))
   })
 
-  it('should not run the same file if it has already been run', (done) => {
+  it('should not run the same file if it has already been run', async () => {
     const collection = client.db().collection('databaseUpdates')
-    let count = 0
 
-    collection.insertOne({ file: files[0], created: new Date() }).then(() => {
-      const updates = new DatabaseUpdates({
-        updatePath: `${__dirname}/fixtures`,
-        db: client.db(),
-        logger,
-      })
+    await collection.insertOne({ file: files[0], created: new Date() })
+    const updates = await databaseUpdates({
+      updatePath: `${__dirname}/fixtures`,
+      db: client.db(),
+      logger,
+    }).run()
 
-      updates.on('file', () => {
-        count += 1
-      })
+    assert.equal(updates.length, files.length - 1)
+  })
 
-      return updates.on('end', () => {
-        assert.equal(count, files.length - 1)
-        done()
-      })
-    })
+  it('should bubble up errors', async () => {
+    await assert.rejects(
+      async () => {
+        await databaseUpdates({
+          updatePath: `${__dirname}/error-fixtures`,
+          db: client.db(),
+          logger,
+        }).run()
+      },
+      {
+        name: 'Error',
+        message: 'This is an error',
+      }
+    )
   })
 })

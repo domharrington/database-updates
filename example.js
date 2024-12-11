@@ -1,5 +1,5 @@
 const { MongoClient } = require('mongodb')
-const DatabaseUpdates = require('.')
+const databaseUpdates = require('.')
 
 async function main() {
   const client = await MongoClient.connect(
@@ -8,16 +8,13 @@ async function main() {
 
   await client.db().dropDatabase()
 
-  const updates = new DatabaseUpdates({
+  await databaseUpdates({
     db: client.db(),
     updatePath: `${__dirname}/test/fixtures/`,
-  })
+  }).run()
 
-  updates.on('file', (file) => console.log(`Processing file: ${file}`))
-  updates.on('end', () => {
-    console.log('Done!')
-    return client.close()
-  })
+  console.log('Done!')
+  return client.close()
 }
 
 main().catch((e) => {
